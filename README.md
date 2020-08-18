@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.com/GrzegorzMika/nonparametric-statistics.svg?branch=master)](https://travis-ci.com/GrzegorzMika/nonparametric-statistics)
 
-A collection of various nonparametric tests build on top of `scipy` and `numpy`.
+NonParStat is a python module containing various non parametric statistical tests. The name NonParStat is a shortcut from Non-Parametric Statistics. The aim of the package is to extend the functionalities provided in the `scipy` package in the scope of statistical testing. 
 
 List of available tests:
 

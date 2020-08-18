@@ -17,8 +17,8 @@ DESCRIPTION = 'A collection of various non-parametric tests.'
 URL = 'https://grzegorzmika.github.io/NonParStat/'
 EMAIL = 'g.w.mika@gmail.com'
 AUTHOR = 'Grzegorz Mika'
-REQUIRES_PYTHON = '>=3.6.0'
-VERSION = '0.1.0'
+REQUIRES_PYTHON = '>=3.8.0'
+VERSION = False
 
 # What packages are required for this module to be executed?
 REQUIRED = [
@@ -120,7 +120,7 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy'
     ],
