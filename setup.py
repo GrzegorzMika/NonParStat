@@ -13,7 +13,7 @@ from setuptools import find_packages, setup, Command
 
 # Package meta-data.
 NAME = 'NonParStat'
-DESCRIPTION = 'A collection of various nonparametric tests.'
+DESCRIPTION = 'A collection of various non-parametric tests.'
 URL = 'https://grzegorzmika.github.io/NonParStat/'
 EMAIL = 'g.w.mika@gmail.com'
 AUTHOR = 'Grzegorz Mika'
