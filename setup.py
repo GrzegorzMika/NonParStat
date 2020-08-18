@@ -13,16 +13,16 @@ from setuptools import find_packages, setup, Command
 
 # Package meta-data.
 NAME = 'NonParStat'
-DESCRIPTION = 'My short description for my project.'
+DESCRIPTION = 'A collection of various nonparametric tests.'
 URL = 'https://github.com/me/myproject'
-EMAIL = 'me@example.com'
-AUTHOR = 'Awesome Soul'
+EMAIL = 'g.w.mika@gmail.com'
+AUTHOR = 'Grzegorz Mika'
 REQUIRES_PYTHON = '>=3.6.0'
 VERSION = '0.1.0'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    # 'requests', 'maya', 'records',
+    'numpy', 'scipy'
 ]
 
 # What packages are optional?
