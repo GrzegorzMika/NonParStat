@@ -1,6 +1,6 @@
 import unittest
 
-from nonparstat.cucconi import *
+from nonparstat.Cucconi import *
 
 
 class Cucconi(unittest.TestCase):
