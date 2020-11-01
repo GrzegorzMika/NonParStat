@@ -55,6 +55,24 @@ def _podgor_gastwirth_dist(a, b, x):
 
 
 def podgor_gastwirth_test(a, b, ties=&#39;average&#39;):
+    &#34;&#34;&#34;
+    Method to perform a Podgor-Gastwirth scale-location test.
+    Args:
+        a (np.ndarray): vector of observations
+        b (np.ndarray): vector of observations
+        ties (str): string specifying a method to deal with ties in data,
+            possible values as for scipy.stats.rankdata
+
+    Returns:
+        tuple: namedtuple with test statistic value and the p-value
+
+    Examples:
+        &gt;&gt;&gt; np.random.seed(987654321) # set random seed to get the same result
+        &gt;&gt;&gt; sample_a = sample_b = np.random.normal(loc=0, scale=1, size=100)
+        &gt;&gt;&gt; podgor_gastwirth_test(sample_a, sample_b)
+        Podgor_GastwirthResult(statistic=-1.9596768652263527e-13, pvalue=1.0)
+
+    &#34;&#34;&#34;
     a, b = map(np.asarray, (a, b))
 
     test_statistics = _podgor_gastwirth_test_statistic(a, b, ties=ties)
@@ -75,12 +93,51 @@ def podgor_gastwirth_test(a, b, ties=&#39;average&#39;):
 <span>def <span class="ident">podgor_gastwirth_test</span></span>(<span>a, b, ties='average')</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Method to perform a Podgor-Gastwirth scale-location test.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>a</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>vector of observations</dd>
+<dt><strong><code>b</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>vector of observations</dd>
+<dt><strong><code>ties</code></strong> :&ensp;<code>str</code></dt>
+<dd>string specifying a method to deal with ties in data,
+possible values as for scipy.stats.rankdata</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>tuple</code></dt>
+<dd>namedtuple with test statistic value and the p-value</dd>
+</dl>
+<h2 id="examples">Examples</h2>
+<pre><code class="python-repl">&gt;&gt;&gt; np.random.seed(987654321) # set random seed to get the same result
+&gt;&gt;&gt; sample_a = sample_b = np.random.normal(loc=0, scale=1, size=100)
+&gt;&gt;&gt; podgor_gastwirth_test(sample_a, sample_b)
+Podgor_GastwirthResult(statistic=-1.9596768652263527e-13, pvalue=1.0)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def podgor_gastwirth_test(a, b, ties=&#39;average&#39;):
+    &#34;&#34;&#34;
+    Method to perform a Podgor-Gastwirth scale-location test.
+    Args:
+        a (np.ndarray): vector of observations
+        b (np.ndarray): vector of observations
+        ties (str): string specifying a method to deal with ties in data,
+            possible values as for scipy.stats.rankdata
+
+    Returns:
+        tuple: namedtuple with test statistic value and the p-value
+
+    Examples:
+        &gt;&gt;&gt; np.random.seed(987654321) # set random seed to get the same result
+        &gt;&gt;&gt; sample_a = sample_b = np.random.normal(loc=0, scale=1, size=100)
+        &gt;&gt;&gt; podgor_gastwirth_test(sample_a, sample_b)
+        Podgor_GastwirthResult(statistic=-1.9596768652263527e-13, pvalue=1.0)
+
+    &#34;&#34;&#34;
     a, b = map(np.asarray, (a, b))
 
     test_statistics = _podgor_gastwirth_test_statistic(a, b, ties=ties)

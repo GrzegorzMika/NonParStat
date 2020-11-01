@@ -94,12 +94,15 @@ def cucconi_test(a, b, method=&#39;bootstrap&#39;, replications=1000, ties=&#39;
     Returns:
         tuple: namedtuple with test statistic value and the p-value
 
-    Example:
+    Raises:
+        ValueError: if &#39;method&#39; parameter is not specified to &#39;bootstrap&#39; or &#39;permutation&#39;
+
+    Examples:
         &gt;&gt;&gt; np.random.seed(987654321) # set random seed to get the same result
         &gt;&gt;&gt; sample_a = sample_b = np.random.normal(loc=0, scale=1, size=100)
         &gt;&gt;&gt; cucconi_test(sample_a, sample_b, replications=10000)
         CucconiResult(statistic=3.7763314663244195e-08, pvalue=1.0)
-        
+
         &gt;&gt;&gt; np.random.seed(987654321)
         &gt;&gt;&gt; sample_a = np.random.normal(loc=0, scale=1, size=100)
         &gt;&gt;&gt; sample_b = np.random.normal(loc=10, scale=10, size=100)
@@ -157,7 +160,12 @@ possible values as for scipy.stats.rankdata</dd>
 <dt><code>tuple</code></dt>
 <dd>namedtuple with test statistic value and the p-value</dd>
 </dl>
-<h2 id="example">Example</h2>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>ValueError</code></dt>
+<dd>if 'method' parameter is not specified to 'bootstrap' or 'permutation'</dd>
+</dl>
+<h2 id="examples">Examples</h2>
 <pre><code class="python-repl">&gt;&gt;&gt; np.random.seed(987654321) # set random seed to get the same result
 &gt;&gt;&gt; sample_a = sample_b = np.random.normal(loc=0, scale=1, size=100)
 &gt;&gt;&gt; cucconi_test(sample_a, sample_b, replications=10000)
@@ -188,12 +196,15 @@ CucconiResult(statistic=2.62372293956099, pvalue=0.000999000999000999)
     Returns:
         tuple: namedtuple with test statistic value and the p-value
 
-    Example:
+    Raises:
+        ValueError: if &#39;method&#39; parameter is not specified to &#39;bootstrap&#39; or &#39;permutation&#39;
+
+    Examples:
         &gt;&gt;&gt; np.random.seed(987654321) # set random seed to get the same result
         &gt;&gt;&gt; sample_a = sample_b = np.random.normal(loc=0, scale=1, size=100)
         &gt;&gt;&gt; cucconi_test(sample_a, sample_b, replications=10000)
         CucconiResult(statistic=3.7763314663244195e-08, pvalue=1.0)
-        
+
         &gt;&gt;&gt; np.random.seed(987654321)
         &gt;&gt;&gt; sample_a = np.random.normal(loc=0, scale=1, size=100)
         &gt;&gt;&gt; sample_b = np.random.normal(loc=10, scale=10, size=100)

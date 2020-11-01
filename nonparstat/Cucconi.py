@@ -66,7 +66,10 @@ def cucconi_test(a, b, method='bootstrap', replications=1000, ties='average'):
     Returns:
         tuple: namedtuple with test statistic value and the p-value
 
-    Example:
+    Raises:
+        ValueError: if 'method' parameter is not specified to 'bootstrap' or 'permutation'
+
+    Examples:
         >>> np.random.seed(987654321) # set random seed to get the same result
         >>> sample_a = sample_b = np.random.normal(loc=0, scale=1, size=100)
         >>> cucconi_test(sample_a, sample_b, replications=10000)
