@@ -1,6 +1,7 @@
+from collections import namedtuple
+
 import numpy as np
 from scipy.stats import rankdata
-from collections import namedtuple
 
 CucconiResult = namedtuple('CucconiResult', ('statistic', 'pvalue'))
 
@@ -51,6 +52,33 @@ def _cucconi_dist_bootstrap(a, b, replications=1000, ties='average'):
 
 
 def cucconi_test(a, b, method='bootstrap', replications=1000, ties='average'):
+    """
+    Method to perform a Cucconi scale-location test.
+    Args:
+        a (np.ndarray): vector of observations
+        b (np.ndarray): vector of observations
+        method (str): method for determining p-value,
+            possible values are 'bootstrap' and 'permutation'
+        replications (int): number of bootstrap replications
+        ties (str): string specifying a method to deal with ties in data,
+            possible values as for scipy.stats.rankdata
+
+    Returns:
+        tuple: namedtuple with test statistic value and the p-value
+
+    Example:
+        >>> np.random.seed(987654321) # set random seed to get the same result
+        >>> sample_a = sample_b = np.random.normal(loc=0, scale=1, size=100)
+        >>> cucconi_test(sample_a, sample_b, replications=10000)
+        CucconiResult(statistic=3.7763314663244195e-08, pvalue=1.0)
+
+        >>> np.random.seed(987654321)
+        >>> sample_a = np.random.normal(loc=0, scale=1, size=100)
+        >>> sample_b = np.random.normal(loc=10, scale=10, size=100)
+        >>> cucconi_test(sample_a, sample_b, method='permutation')
+        CucconiResult(statistic=2.62372293956099, pvalue=0.000999000999000999)
+
+    """
     a, b = map(np.asarray, (a, b))
 
     test_statistics = _cucconi_test_statistic(a=a, b=b, ties=ties)
@@ -64,6 +92,6 @@ def cucconi_test(a, b, method='bootstrap', replications=1000, ties='average'):
             "Unknown method for constructing the distribution, "
             "possible values are ['bootstrap', 'permutation'], but {} was provided".format(method))
 
-    p_value = (len(np.array(h0_distribution)[h0_distribution >= test_statistics]) + 1)/(replications + 1)
+    p_value = (len(np.array(h0_distribution)[h0_distribution >= test_statistics]) + 1) / (replications + 1)
 
     return CucconiResult(statistic=test_statistics, pvalue=p_value)

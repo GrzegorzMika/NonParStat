@@ -26,9 +26,10 @@
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">import numpy as np
+<pre><code class="python">from collections import namedtuple
+
+import numpy as np
 from scipy.stats import rankdata
-from collections import namedtuple
 
 CucconiResult = namedtuple(&#39;CucconiResult&#39;, (&#39;statistic&#39;, &#39;pvalue&#39;))
 
@@ -79,6 +80,33 @@ def _cucconi_dist_bootstrap(a, b, replications=1000, ties=&#39;average&#39;):
 
 
 def cucconi_test(a, b, method=&#39;bootstrap&#39;, replications=1000, ties=&#39;average&#39;):
+    &#34;&#34;&#34;
+    Method to perform a Cucconi scale-location test.
+    Args:
+        a (np.ndarray): vector of observations
+        b (np.ndarray): vector of observations
+        method (str): method for determining p-value,
+            possible values are &#39;bootstrap&#39; and &#39;permutation&#39;
+        replications (int): number of bootstrap replications
+        ties (str): string specifying a method to deal with ties in data,
+            possible values as for scipy.stats.rankdata
+
+    Returns:
+        tuple: namedtuple with test statistic value and the p-value
+
+    Example:
+        &gt;&gt;&gt; np.random.seed(987654321) # set random seed to get the same result
+        &gt;&gt;&gt; sample_a = sample_b = np.random.normal(loc=0, scale=1, size=100)
+        &gt;&gt;&gt; cucconi_test(sample_a, sample_b, replications=10000)
+        CucconiResult(statistic=3.7763314663244195e-08, pvalue=1.0)
+        
+        &gt;&gt;&gt; np.random.seed(987654321)
+        &gt;&gt;&gt; sample_a = np.random.normal(loc=0, scale=1, size=100)
+        &gt;&gt;&gt; sample_b = np.random.normal(loc=10, scale=10, size=100)
+        &gt;&gt;&gt; cucconi_test(sample_a, sample_b, method=&#39;permutation&#39;)
+        CucconiResult(statistic=2.62372293956099, pvalue=0.000999000999000999)
+
+    &#34;&#34;&#34;
     a, b = map(np.asarray, (a, b))
 
     test_statistics = _cucconi_test_statistic(a=a, b=b, ties=ties)
@@ -92,7 +120,7 @@ def cucconi_test(a, b, method=&#39;bootstrap&#39;, replications=1000, ties=&#39;
             &#34;Unknown method for constructing the distribution, &#34;
             &#34;possible values are [&#39;bootstrap&#39;, &#39;permutation&#39;], but {} was provided&#34;.format(method))
 
-    p_value = (len(np.array(h0_distribution)[h0_distribution &gt;= test_statistics]) + 1)/(replications + 1)
+    p_value = (len(np.array(h0_distribution)[h0_distribution &gt;= test_statistics]) + 1) / (replications + 1)
 
     return CucconiResult(statistic=test_statistics, pvalue=p_value)</code></pre>
 </details>
@@ -108,12 +136,71 @@ def cucconi_test(a, b, method=&#39;bootstrap&#39;, replications=1000, ties=&#39;
 <span>def <span class="ident">cucconi_test</span></span>(<span>a, b, method='bootstrap', replications=1000, ties='average')</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Method to perform a Cucconi scale-location test.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>a</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>vector of observations</dd>
+<dt><strong><code>b</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>vector of observations</dd>
+<dt><strong><code>method</code></strong> :&ensp;<code>str</code></dt>
+<dd>method for determining p-value,
+possible values are 'bootstrap' and 'permutation'</dd>
+<dt><strong><code>replications</code></strong> :&ensp;<code>int</code></dt>
+<dd>number of bootstrap replications</dd>
+<dt><strong><code>ties</code></strong> :&ensp;<code>str</code></dt>
+<dd>string specifying a method to deal with ties in data,
+possible values as for scipy.stats.rankdata</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>tuple</code></dt>
+<dd>namedtuple with test statistic value and the p-value</dd>
+</dl>
+<h2 id="example">Example</h2>
+<pre><code class="python-repl">&gt;&gt;&gt; np.random.seed(987654321) # set random seed to get the same result
+&gt;&gt;&gt; sample_a = sample_b = np.random.normal(loc=0, scale=1, size=100)
+&gt;&gt;&gt; cucconi_test(sample_a, sample_b, replications=10000)
+CucconiResult(statistic=3.7763314663244195e-08, pvalue=1.0)
+</code></pre>
+<pre><code class="python-repl">&gt;&gt;&gt; np.random.seed(987654321)
+&gt;&gt;&gt; sample_a = np.random.normal(loc=0, scale=1, size=100)
+&gt;&gt;&gt; sample_b = np.random.normal(loc=10, scale=10, size=100)
+&gt;&gt;&gt; cucconi_test(sample_a, sample_b, method='permutation')
+CucconiResult(statistic=2.62372293956099, pvalue=0.000999000999000999)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def cucconi_test(a, b, method=&#39;bootstrap&#39;, replications=1000, ties=&#39;average&#39;):
+    &#34;&#34;&#34;
+    Method to perform a Cucconi scale-location test.
+    Args:
+        a (np.ndarray): vector of observations
+        b (np.ndarray): vector of observations
+        method (str): method for determining p-value,
+            possible values are &#39;bootstrap&#39; and &#39;permutation&#39;
+        replications (int): number of bootstrap replications
+        ties (str): string specifying a method to deal with ties in data,
+            possible values as for scipy.stats.rankdata
+
+    Returns:
+        tuple: namedtuple with test statistic value and the p-value
+
+    Example:
+        &gt;&gt;&gt; np.random.seed(987654321) # set random seed to get the same result
+        &gt;&gt;&gt; sample_a = sample_b = np.random.normal(loc=0, scale=1, size=100)
+        &gt;&gt;&gt; cucconi_test(sample_a, sample_b, replications=10000)
+        CucconiResult(statistic=3.7763314663244195e-08, pvalue=1.0)
+        
+        &gt;&gt;&gt; np.random.seed(987654321)
+        &gt;&gt;&gt; sample_a = np.random.normal(loc=0, scale=1, size=100)
+        &gt;&gt;&gt; sample_b = np.random.normal(loc=10, scale=10, size=100)
+        &gt;&gt;&gt; cucconi_test(sample_a, sample_b, method=&#39;permutation&#39;)
+        CucconiResult(statistic=2.62372293956099, pvalue=0.000999000999000999)
+
+    &#34;&#34;&#34;
     a, b = map(np.asarray, (a, b))
 
     test_statistics = _cucconi_test_statistic(a=a, b=b, ties=ties)
@@ -127,7 +214,7 @@ def cucconi_test(a, b, method=&#39;bootstrap&#39;, replications=1000, ties=&#39;
             &#34;Unknown method for constructing the distribution, &#34;
             &#34;possible values are [&#39;bootstrap&#39;, &#39;permutation&#39;], but {} was provided&#34;.format(method))
 
-    p_value = (len(np.array(h0_distribution)[h0_distribution &gt;= test_statistics]) + 1)/(replications + 1)
+    p_value = (len(np.array(h0_distribution)[h0_distribution &gt;= test_statistics]) + 1) / (replications + 1)
 
     return CucconiResult(statistic=test_statistics, pvalue=p_value)</code></pre>
 </details>

@@ -8,6 +8,6 @@ NonParStat is a python module containing various non parametric statistical test
 List of available tests:
 
 1. Scale-location Cucconi test
-2. Scale-location Podgor Gastwirth test
+2. Scale-location Podgor-Gastwirth test
 
 To generate the documentation run `pdoc3 --html --force  -o'docs' nonparstat/`.
