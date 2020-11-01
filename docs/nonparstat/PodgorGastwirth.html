@@ -27,10 +27,41 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">import numpy as np
-from scipy.stats import rankdata
+from scipy.stats import rankdata, f
 from collections import namedtuple
 
-Podgor_GastwirthResult = namedtuple(&#39;Podgor_GastwirthResult&#39;, (&#39;statistic&#39;, &#39;pvalue&#39;))</code></pre>
+Podgor_GastwirthResult = namedtuple(&#39;Podgor_GastwirthResult&#39;, (&#39;statistic&#39;, &#39;pvalue&#39;))
+
+
+def _podgor_gastwirth_test_statistic(a, b, ties=&#39;average&#39;):
+    n1 = len(a)
+    n2 = len(b)
+    n = n1 + n2
+    alldata = np.concatenate((a, b))
+    ranked = rankdata(alldata, method=ties)
+    ranked_sq = np.square(ranked)
+    I_vector = np.hstack([np.repeat(1, n1), np.repeat(0, n2)])
+    S_matrix = np.vstack([np.repeat(1, n), ranked, ranked_sq])
+    b_vector = np.matmul(np.linalg.inv(np.matmul(S_matrix, S_matrix.T)), np.matmul(S_matrix, I_vector))
+    numerator = (np.matmul(b_vector.T, np.matmul(S_matrix, I_vector)) - n1 ** 2 / n) / 2
+    denumerator = (n1 - np.matmul(b_vector.T, np.matmul(S_matrix, I_vector))) / (n - 3)
+    return numerator / denumerator
+
+
+def _podgor_gastwirth_dist(a, b, x):
+    df1 = 2
+    df2 = len(a) + len(b) - 3
+    return f.cdf(x=x, dfn=df1, dfd=df2)
+
+
+def podgor_gastwirth_test(a, b, ties=&#39;average&#39;):
+    a, b = map(np.asarray, (a, b))
+
+    test_statistics = _podgor_gastwirth_test_statistic(a, b, ties=ties)
+
+    p_value = 1 - _podgor_gastwirth_dist(a, b, test_statistics)
+
+    return Podgor_GastwirthResult(statistic=test_statistics, pvalue=p_value)</code></pre>
 </details>
 </section>
 <section>
@@ -38,6 +69,28 @@ Podgor_GastwirthResult = namedtuple(&#39;Podgor_GastwirthResult&#39;, (&#39;stat
 <section>
 </section>
 <section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="nonparstat.PodgorGastwirth.podgor_gastwirth_test"><code class="name flex">
+<span>def <span class="ident">podgor_gastwirth_test</span></span>(<span>a, b, ties='average')</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def podgor_gastwirth_test(a, b, ties=&#39;average&#39;):
+    a, b = map(np.asarray, (a, b))
+
+    test_statistics = _podgor_gastwirth_test_statistic(a, b, ties=ties)
+
+    p_value = 1 - _podgor_gastwirth_dist(a, b, test_statistics)
+
+    return Podgor_GastwirthResult(statistic=test_statistics, pvalue=p_value)</code></pre>
+</details>
+</dd>
+</dl>
 </section>
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
@@ -76,6 +129,11 @@ Podgor_GastwirthResult = namedtuple(&#39;Podgor_GastwirthResult&#39;, (&#39;stat
 <li><h3>Super-module</h3>
 <ul>
 <li><code><a title="nonparstat" href="index.html">nonparstat</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="nonparstat.PodgorGastwirth.podgor_gastwirth_test" href="#nonparstat.PodgorGastwirth.podgor_gastwirth_test">podgor_gastwirth_test</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
