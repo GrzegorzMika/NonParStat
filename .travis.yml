@@ -2,15 +2,15 @@ language: python
 python:
   - "3.8"
 install:
-  - pip install codecov
-  - pip install coverage
   - pip install -r requirements.txt
+  - pip install codecov
+  - pip install pytest-cov
 
 script:
-  - python -m unittest discover -s tests/
+  - pytest --cov-report=xml --cov=nonparstat tests/
 
 after_success:
-  - bash <(curl -s https://codecov.io/bash) -R .
+  - codecov
 
 deploy:
   provider: pypi
