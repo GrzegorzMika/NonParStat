@@ -10,7 +10,7 @@ script:
   - python -m unittest discover -s tests/
 
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
+  - bash <(curl -s https://codecov.io/bash) -R .
 
 deploy:
   provider: pypi
