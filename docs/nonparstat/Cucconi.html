@@ -32,6 +32,7 @@ import numpy as np
 from scipy.stats import rankdata
 
 CucconiResult = namedtuple(&#39;CucconiResult&#39;, (&#39;statistic&#39;, &#39;pvalue&#39;))
+CucconiMultisampleResult = namedtuple(&#39;CucconiMultisampleResult&#39;, (&#39;statistic&#39;, &#39;pvalue&#39;))
 
 
 def _cucconi_test_statistic(a, b, ties=&#39;average&#39;):
@@ -125,7 +126,99 @@ def cucconi_test(a, b, method=&#39;bootstrap&#39;, replications=1000, ties=&#39;
 
     p_value = (len(np.array(h0_distribution)[h0_distribution &gt;= test_statistics]) + 1) / (replications + 1)
 
-    return CucconiResult(statistic=test_statistics, pvalue=p_value)</code></pre>
+    return CucconiResult(statistic=test_statistics, pvalue=p_value)
+
+
+def _cucconi_multisample_test_statistic(samples, ties=&#39;average&#39;):
+    lengths = np.cumsum([0] + [s.shape[0] for s in samples])
+    ranked_data = rankdata(np.concatenate(samples), method=ties)
+    samples_ranks = [ranked_data[lengths[k]:lengths[k+1]] for k, _ in enumerate(lengths[:-1])]
+
+    n_i = np.array([s.shape[0] for s in samples])
+    n = sum(n_i)
+
+    expected_values = n_i * (n + 1) * (2 * n + 1) / 6
+    std_deviations = np.sqrt(n_i * (n - n_i) * (n + 1) * (2 * n + 1) * (8 * n + 11) / 180)
+    correlation = -(30*n+14*n**2+19)/((8*n+11)*(2*n+1))
+
+    U = np.array([(np.sum(sample**2) - expected_values[i])/std_deviations[i] for i, sample in enumerate(samples_ranks)])
+    V = np.array([(np.sum((n+1-sample)**2) - expected_values[i])/std_deviations[i] for i, sample in enumerate(samples_ranks)])
+    MC = np.mean(U**2+V**2-2*U*V*correlation)/(2-2*correlation**2)
+
+    return MC
+
+
+def _cucconi_multisample_dist_bootstrap(samples, replications=1000, ties=&#39;average&#39;):
+    lengths = [len(s) for s in samples]
+    h0_data = np.concatenate(samples)
+
+    def bootstrap_test(replication_index):
+        new_samples = [np.random.choice(h0_data, size=n, replace=True) for n in lengths]
+        return _cucconi_multisample_test_statistic(samples=new_samples, ties=ties)
+
+    return sorted(map(bootstrap_test, range(replications)))
+
+
+def _cucconi_multisample_dist_permutation(samples, replications=1000, ties=&#39;average&#39;):
+    lengths = lengths = np.cumsum([0] + [s.shape[0] for s in samples])
+    h0_data = np.concatenate(samples)
+
+    def permuted_test(replication_index):
+        permuted_data = np.random.permutation(h0_data)
+        new_samples = [permuted_data[lengths[k]:lengths[k + 1]] for k, _ in enumerate(lengths[:-1])]
+        return _cucconi_multisample_test_statistic(samples=new_samples, ties=ties)
+
+    return sorted(map(permuted_test, range(replications)))
+
+
+def cucconi_multisample_test(samples, method=&#39;bootstrap&#39;, replications=1000, ties=&#39;average&#39;):
+    &#34;&#34;&#34;
+    Method to perform a multisample Cucconi scale-location test.
+    Args:
+        samples (List[numpy.ndarray]): list of observation vectors
+        method (str): method for determining p-value,
+            possible values are &#39;bootstrap&#39; and &#39;permutation&#39;
+        replications (int): number of bootstrap replications
+        ties (str): string specifying a method to deal with ties in data,
+            possible values as for scipy.stats.rankdata
+
+    Returns:
+        tuple: namedtuple with test statistic value and the p-value
+
+    Raises:
+        ValueError: if &#39;method&#39; parameter is not specified to &#39;bootstrap&#39; or &#39;permutation&#39;
+
+    Examples:
+        &gt;&gt;&gt; np.random.seed(987654321) # set random seed to get the same result
+        &gt;&gt;&gt; sample_a = sample_b = np.random.normal(loc=0, scale=1, size=100)
+        &gt;&gt;&gt; cucconi_multisample_test([sample_a, sample_b], replications=100000)
+        CucconiMultisampleResult(statistic=6.996968353551774e-07, pvalue=1.0)
+
+        &gt;&gt;&gt; np.random.seed(987654321)
+        &gt;&gt;&gt; sample_a = np.random.normal(loc=0, scale=1, size=100)
+        &gt;&gt;&gt; sample_b = np.random.normal(loc=10, scale=10, size=100)
+        &gt;&gt;&gt; cucconi_multisample_test([sample_a, sample_a, sample_b], method=&#39;permutation&#39;)
+        CucconiMultisampleResult(statistic=45.3891929069273, pvalue=0.000999000999000999)
+
+    &#34;&#34;&#34;
+    assert isinstance(samples, list), &#39;Sample must be provided in a form of list, &#39; \
+                                      &#39;but were provided in {} format.&#39;.format(type(samples))
+    samples = list(map(np.asarray, samples))
+
+    test_statistics = _cucconi_multisample_test_statistic(samples=samples, ties=ties)
+
+    if method == &#39;permutation&#39;:
+        h0_distribution = _cucconi_multisample_dist_bootstrap(samples=samples, replications=replications, ties=ties)
+    elif method == &#39;bootstrap&#39;:
+        h0_distribution = _cucconi_multisample_dist_permutation(samples=samples, replications=replications, ties=ties)
+    else:
+        raise ValueError(
+            &#34;Unknown method for constructing the distribution, &#34;
+            &#34;possible values are [&#39;bootstrap&#39;, &#39;permutation&#39;], but {} was provided&#34;.format(method))
+
+    p_value = (len(np.array(h0_distribution)[h0_distribution &gt;= test_statistics]) + 1) / (replications + 1)
+
+    return CucconiMultisampleResult(statistic=test_statistics, pvalue=p_value)</code></pre>
 </details>
 </section>
 <section>
@@ -135,6 +228,100 @@ def cucconi_test(a, b, method=&#39;bootstrap&#39;, replications=1000, ties=&#39;
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="nonparstat.Cucconi.cucconi_multisample_test"><code class="name flex">
+<span>def <span class="ident">cucconi_multisample_test</span></span>(<span>samples, method='bootstrap', replications=1000, ties='average')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to perform a multisample Cucconi scale-location test.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>samples</code></strong> :&ensp;<code>List[numpy.ndarray]</code></dt>
+<dd>list of observation vectors</dd>
+<dt><strong><code>method</code></strong> :&ensp;<code>str</code></dt>
+<dd>method for determining p-value,
+possible values are 'bootstrap' and 'permutation'</dd>
+<dt><strong><code>replications</code></strong> :&ensp;<code>int</code></dt>
+<dd>number of bootstrap replications</dd>
+<dt><strong><code>ties</code></strong> :&ensp;<code>str</code></dt>
+<dd>string specifying a method to deal with ties in data,
+possible values as for scipy.stats.rankdata</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>tuple</code></dt>
+<dd>namedtuple with test statistic value and the p-value</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>ValueError</code></dt>
+<dd>if 'method' parameter is not specified to 'bootstrap' or 'permutation'</dd>
+</dl>
+<h2 id="examples">Examples</h2>
+<pre><code class="python-repl">&gt;&gt;&gt; np.random.seed(987654321) # set random seed to get the same result
+&gt;&gt;&gt; sample_a = sample_b = np.random.normal(loc=0, scale=1, size=100)
+&gt;&gt;&gt; cucconi_multisample_test([sample_a, sample_b], replications=100000)
+CucconiMultisampleResult(statistic=6.996968353551774e-07, pvalue=1.0)
+</code></pre>
+<pre><code class="python-repl">&gt;&gt;&gt; np.random.seed(987654321)
+&gt;&gt;&gt; sample_a = np.random.normal(loc=0, scale=1, size=100)
+&gt;&gt;&gt; sample_b = np.random.normal(loc=10, scale=10, size=100)
+&gt;&gt;&gt; cucconi_multisample_test([sample_a, sample_a, sample_b], method='permutation')
+CucconiMultisampleResult(statistic=45.3891929069273, pvalue=0.000999000999000999)
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cucconi_multisample_test(samples, method=&#39;bootstrap&#39;, replications=1000, ties=&#39;average&#39;):
+    &#34;&#34;&#34;
+    Method to perform a multisample Cucconi scale-location test.
+    Args:
+        samples (List[numpy.ndarray]): list of observation vectors
+        method (str): method for determining p-value,
+            possible values are &#39;bootstrap&#39; and &#39;permutation&#39;
+        replications (int): number of bootstrap replications
+        ties (str): string specifying a method to deal with ties in data,
+            possible values as for scipy.stats.rankdata
+
+    Returns:
+        tuple: namedtuple with test statistic value and the p-value
+
+    Raises:
+        ValueError: if &#39;method&#39; parameter is not specified to &#39;bootstrap&#39; or &#39;permutation&#39;
+
+    Examples:
+        &gt;&gt;&gt; np.random.seed(987654321) # set random seed to get the same result
+        &gt;&gt;&gt; sample_a = sample_b = np.random.normal(loc=0, scale=1, size=100)
+        &gt;&gt;&gt; cucconi_multisample_test([sample_a, sample_b], replications=100000)
+        CucconiMultisampleResult(statistic=6.996968353551774e-07, pvalue=1.0)
+
+        &gt;&gt;&gt; np.random.seed(987654321)
+        &gt;&gt;&gt; sample_a = np.random.normal(loc=0, scale=1, size=100)
+        &gt;&gt;&gt; sample_b = np.random.normal(loc=10, scale=10, size=100)
+        &gt;&gt;&gt; cucconi_multisample_test([sample_a, sample_a, sample_b], method=&#39;permutation&#39;)
+        CucconiMultisampleResult(statistic=45.3891929069273, pvalue=0.000999000999000999)
+
+    &#34;&#34;&#34;
+    assert isinstance(samples, list), &#39;Sample must be provided in a form of list, &#39; \
+                                      &#39;but were provided in {} format.&#39;.format(type(samples))
+    samples = list(map(np.asarray, samples))
+
+    test_statistics = _cucconi_multisample_test_statistic(samples=samples, ties=ties)
+
+    if method == &#39;permutation&#39;:
+        h0_distribution = _cucconi_multisample_dist_bootstrap(samples=samples, replications=replications, ties=ties)
+    elif method == &#39;bootstrap&#39;:
+        h0_distribution = _cucconi_multisample_dist_permutation(samples=samples, replications=replications, ties=ties)
+    else:
+        raise ValueError(
+            &#34;Unknown method for constructing the distribution, &#34;
+            &#34;possible values are [&#39;bootstrap&#39;, &#39;permutation&#39;], but {} was provided&#34;.format(method))
+
+    p_value = (len(np.array(h0_distribution)[h0_distribution &gt;= test_statistics]) + 1) / (replications + 1)
+
+    return CucconiMultisampleResult(statistic=test_statistics, pvalue=p_value)</code></pre>
+</details>
+</dd>
 <dt id="nonparstat.Cucconi.cucconi_test"><code class="name flex">
 <span>def <span class="ident">cucconi_test</span></span>(<span>a, b, method='bootstrap', replications=1000, ties='average')</span>
 </code></dt>
@@ -235,6 +422,28 @@ CucconiResult(statistic=2.62372293956099, pvalue=0.000999000999000999)
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
+<dt id="nonparstat.Cucconi.CucconiMultisampleResult"><code class="flex name class">
+<span>class <span class="ident">CucconiMultisampleResult</span></span>
+<span>(</span><span>statistic, pvalue)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>CucconiMultisampleResult(statistic, pvalue)</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>builtins.tuple</li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="nonparstat.Cucconi.CucconiMultisampleResult.pvalue"><code class="name">var <span class="ident">pvalue</span></code></dt>
+<dd>
+<div class="desc"><p>Alias for field number 1</p></div>
+</dd>
+<dt id="nonparstat.Cucconi.CucconiMultisampleResult.statistic"><code class="name">var <span class="ident">statistic</span></code></dt>
+<dd>
+<div class="desc"><p>Alias for field number 0</p></div>
+</dd>
+</dl>
+</dd>
 <dt id="nonparstat.Cucconi.CucconiResult"><code class="flex name class">
 <span>class <span class="ident">CucconiResult</span></span>
 <span>(</span><span>statistic, pvalue)</span>
@@ -273,11 +482,19 @@ CucconiResult(statistic=2.62372293956099, pvalue=0.000999000999000999)
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
+<li><code><a title="nonparstat.Cucconi.cucconi_multisample_test" href="#nonparstat.Cucconi.cucconi_multisample_test">cucconi_multisample_test</a></code></li>
 <li><code><a title="nonparstat.Cucconi.cucconi_test" href="#nonparstat.Cucconi.cucconi_test">cucconi_test</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
+<li>
+<h4><code><a title="nonparstat.Cucconi.CucconiMultisampleResult" href="#nonparstat.Cucconi.CucconiMultisampleResult">CucconiMultisampleResult</a></code></h4>
+<ul class="">
+<li><code><a title="nonparstat.Cucconi.CucconiMultisampleResult.pvalue" href="#nonparstat.Cucconi.CucconiMultisampleResult.pvalue">pvalue</a></code></li>
+<li><code><a title="nonparstat.Cucconi.CucconiMultisampleResult.statistic" href="#nonparstat.Cucconi.CucconiMultisampleResult.statistic">statistic</a></code></li>
+</ul>
+</li>
 <li>
 <h4><code><a title="nonparstat.Cucconi.CucconiResult" href="#nonparstat.Cucconi.CucconiResult">CucconiResult</a></code></h4>
 <ul class="">

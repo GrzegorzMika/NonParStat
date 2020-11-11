@@ -144,6 +144,35 @@ def _cucconi_multisample_dist_permutation(samples, replications=1000, ties='aver
 
 
 def cucconi_multisample_test(samples, method='bootstrap', replications=1000, ties='average'):
+    """
+    Method to perform a multisample Cucconi scale-location test.
+    Args:
+        samples (List[numpy.ndarray]): list of observation vectors
+        method (str): method for determining p-value,
+            possible values are 'bootstrap' and 'permutation'
+        replications (int): number of bootstrap replications
+        ties (str): string specifying a method to deal with ties in data,
+            possible values as for scipy.stats.rankdata
+
+    Returns:
+        tuple: namedtuple with test statistic value and the p-value
+
+    Raises:
+        ValueError: if 'method' parameter is not specified to 'bootstrap' or 'permutation'
+
+    Examples:
+        >>> np.random.seed(987654321) # set random seed to get the same result
+        >>> sample_a = sample_b = np.random.normal(loc=0, scale=1, size=100)
+        >>> cucconi_multisample_test([sample_a, sample_b], replications=100000)
+        CucconiMultisampleResult(statistic=6.996968353551774e-07, pvalue=1.0)
+
+        >>> np.random.seed(987654321)
+        >>> sample_a = np.random.normal(loc=0, scale=1, size=100)
+        >>> sample_b = np.random.normal(loc=10, scale=10, size=100)
+        >>> cucconi_multisample_test([sample_a, sample_a, sample_b], method='permutation')
+        CucconiMultisampleResult(statistic=45.3891929069273, pvalue=0.000999000999000999)
+
+    """
     assert isinstance(samples, list), 'Sample must be provided in a form of list, ' \
                                       'but were provided in {} format.'.format(type(samples))
     samples = list(map(np.asarray, samples))
