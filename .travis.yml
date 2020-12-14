@@ -1,8 +1,8 @@
 language: python
 python:
+  - "3.6"
   - "3.7"
   - "3.8"
-  - "3.9"
 install:
   - pip install -r requirements.txt
   - pip install codecov
@@ -19,6 +19,6 @@ deploy:
   user: __token__
   password: $PYPI_TOKEN
   distributions: "sdist bdist_wheel"
-  skip_existing: true
+  skip_existing: false
   on:
     branch: master
