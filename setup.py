@@ -17,7 +17,7 @@ DESCRIPTION = 'A collection of various non-parametric tests.'
 URL = 'https://grzegorzmika.github.io/NonParStat/'
 EMAIL = 'g.w.mika@gmail.com'
 AUTHOR = 'Grzegorz Mika'
-REQUIRES_PYTHON = '>=3.8.0'
+REQUIRES_PYTHON = '==3.7.*'
 VERSION = False
 
 # What packages are required for this module to be executed?
@@ -27,7 +27,7 @@ REQUIRED = [
 
 # What packages are optional?
 EXTRAS = {
-    # 'fancy feature': ['django'],
+    'GPU support': ['cupy'],
 }
 
 # The rest you shouldn't have to touch too much :)
@@ -120,6 +120,7 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy'
