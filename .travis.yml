@@ -28,6 +28,6 @@ deploy:
   user: __token__
   password: $PYPI_TOKEN
   distributions: "sdist bdist_wheel"
-  skip_existing: false
+  skip_existing: true
   on:
     branch: master
