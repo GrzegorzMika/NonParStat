@@ -17,7 +17,7 @@ DESCRIPTION = 'A collection of various non-parametric tests.'
 URL = 'https://grzegorzmika.github.io/NonParStat/'
 EMAIL = 'g.w.mika@gmail.com'
 AUTHOR = 'Grzegorz Mika'
-REQUIRES_PYTHON = '>=3.8.0'
+REQUIRES_PYTHON = '>=3.7'
 VERSION = False
 
 # What packages are required for this module to be executed?
