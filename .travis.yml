@@ -1,8 +1,17 @@
 language: python
+
 python:
   - "3.6"
   - "3.7"
   - "3.8"
+
+os: linux
+
+dist:
+  - "xenial"
+  - "bionic"
+  - "focal"
+
 install:
   - pip install -r requirements.txt
   - pip install codecov
