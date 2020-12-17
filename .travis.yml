@@ -8,8 +8,6 @@ python:
 os: linux
 
 dist:
-  - "xenial"
-  - "bionic"
   - "focal"
 
 install:
