@@ -1,4 +1,5 @@
 from collections import namedtuple
+from joblib import Parallel, delayed
 
 import numpy as np
 from scipy.stats import rankdata
@@ -25,9 +26,8 @@ def _cucconi_test_statistic(a, b, ties='average'):
     return C
 
 
-def _cucconi_dist_permutation(a, b, replications=1000, ties='average'):
+def _cucconi_dist_permutation(a, b, replications=1000, ties='average', n_jobs=1, verbose=0):
     n1 = len(a)
-    n2 = len(b)
     h0_data = np.concatenate([a, b])
 
     def permuted_test(replication_index):
@@ -36,10 +36,10 @@ def _cucconi_dist_permutation(a, b, replications=1000, ties='average'):
         new_b = permuted_data[n1:]
         return _cucconi_test_statistic(a=new_a, b=new_b, ties=ties)
 
-    return sorted(map(permuted_test, range(replications)))
+    return sorted(Parallel(n_jobs=n_jobs, verbose=verbose)(delayed(permuted_test)(i) for i in range(replications)))
 
 
-def _cucconi_dist_bootstrap(a, b, replications=1000, ties='average'):
+def _cucconi_dist_bootstrap(a, b, replications=1000, ties='average', n_jobs=1, verbose=0):
     n1 = len(a)
     n2 = len(b)
     h0_data = np.concatenate([a, b])
@@ -49,10 +49,10 @@ def _cucconi_dist_bootstrap(a, b, replications=1000, ties='average'):
         new_b = np.random.choice(h0_data, size=n2, replace=True)
         return _cucconi_test_statistic(new_a, new_b, ties=ties)
 
-    return sorted(map(bootstrap_test, range(replications)))
+    return sorted(Parallel(n_jobs=n_jobs, verbose=verbose)(delayed(bootstrap_test)(i) for i in range(replications)))
 
 
-def cucconi_test(a, b, method='bootstrap', replications=1000, ties='average'):
+def cucconi_test(a, b, method='bootstrap', replications=1000, ties='average', n_jobs=1, verbose=0):
     """
     Method to perform a Cucconi scale-location test.
     Args:
@@ -63,6 +63,11 @@ def cucconi_test(a, b, method='bootstrap', replications=1000, ties='average'):
         replications (int): number of bootstrap replications
         ties (str): string specifying a method to deal with ties in data,
             possible values as for scipy.stats.rankdata
+        n_jobs (int): the maximum number of concurrently running jobs. If -1 all CPUs are used. If 1 is given,
+            no parallel computing code is used at all. For n_jobs below -1, (n_cpus + 1 + n_jobs) are used.
+            None is a marker for ‘unset’ that will be interpreted as n_jobs=1 (sequential execution)
+        verbose (int): the verbosity level: if non zero, progress messages are printed.
+            Above 50, the output is sent to stdout.
 
     Returns:
         tuple: namedtuple with test statistic value and the p-value
@@ -88,9 +93,11 @@ def cucconi_test(a, b, method='bootstrap', replications=1000, ties='average'):
     test_statistics = _cucconi_test_statistic(a=a, b=b, ties=ties)
 
     if method == 'permutation':
-        h0_distribution = _cucconi_dist_permutation(a=a, b=b, replications=replications, ties=ties)
+        h0_distribution = _cucconi_dist_permutation(a=a, b=b, replications=replications, ties=ties,
+                                                    n_jobs=n_jobs, verbose=verbose)
     elif method == 'bootstrap':
-        h0_distribution = _cucconi_dist_bootstrap(a=a, b=b, replications=replications, ties=ties)
+        h0_distribution = _cucconi_dist_bootstrap(a=a, b=b, replications=replications, ties=ties,
+                                                  n_jobs=n_jobs, verbose=verbose)
     else:
         raise ValueError(
             "Unknown method for constructing the distribution, "
@@ -104,23 +111,25 @@ def cucconi_test(a, b, method='bootstrap', replications=1000, ties='average'):
 def _cucconi_multisample_test_statistic(samples, ties='average'):
     lengths = np.cumsum([0] + [s.shape[0] for s in samples])
     ranked_data = rankdata(np.concatenate(samples), method=ties)
-    samples_ranks = [ranked_data[lengths[k]:lengths[k+1]] for k, _ in enumerate(lengths[:-1])]
+    samples_ranks = [ranked_data[lengths[k]:lengths[k + 1]] for k, _ in enumerate(lengths[:-1])]
 
     n_i = np.array([s.shape[0] for s in samples])
     n = sum(n_i)
 
     expected_values = n_i * (n + 1) * (2 * n + 1) / 6
     std_deviations = np.sqrt(n_i * (n - n_i) * (n + 1) * (2 * n + 1) * (8 * n + 11) / 180)
-    correlation = -(30*n+14*n**2+19)/((8*n+11)*(2*n+1))
+    correlation = -(30 * n + 14 * n ** 2 + 19) / ((8 * n + 11) * (2 * n + 1))
 
-    U = np.array([(np.sum(sample**2) - expected_values[i])/std_deviations[i] for i, sample in enumerate(samples_ranks)])
-    V = np.array([(np.sum((n+1-sample)**2) - expected_values[i])/std_deviations[i] for i, sample in enumerate(samples_ranks)])
-    MC = np.mean(U**2+V**2-2*U*V*correlation)/(2-2*correlation**2)
+    U = np.array(
+        [(np.sum(sample ** 2) - expected_values[i]) / std_deviations[i] for i, sample in enumerate(samples_ranks)])
+    V = np.array([(np.sum((n + 1 - sample) ** 2) - expected_values[i]) / std_deviations[i] for i, sample in
+                  enumerate(samples_ranks)])
+    MC = np.mean(U ** 2 + V ** 2 - 2 * U * V * correlation) / (2 - 2 * correlation ** 2)
 
     return MC
 
 
-def _cucconi_multisample_dist_bootstrap(samples, replications=1000, ties='average'):
+def _cucconi_multisample_dist_bootstrap(samples, replications=1000, ties='average', n_jobs=1, verbose=0):
     lengths = [len(s) for s in samples]
     h0_data = np.concatenate(samples)
 
@@ -128,10 +137,10 @@ def _cucconi_multisample_dist_bootstrap(samples, replications=1000, ties='averag
         new_samples = [np.random.choice(h0_data, size=n, replace=True) for n in lengths]
         return _cucconi_multisample_test_statistic(samples=new_samples, ties=ties)
 
-    return sorted(map(bootstrap_test, range(replications)))
+    return sorted(Parallel(n_jobs=n_jobs, verbose=verbose)(delayed(bootstrap_test)(i) for i in range(replications)))
 
 
-def _cucconi_multisample_dist_permutation(samples, replications=1000, ties='average'):
+def _cucconi_multisample_dist_permutation(samples, replications=1000, ties='average', n_jobs=1, verbose=0):
     lengths = lengths = np.cumsum([0] + [s.shape[0] for s in samples])
     h0_data = np.concatenate(samples)
 
@@ -140,10 +149,10 @@ def _cucconi_multisample_dist_permutation(samples, replications=1000, ties='aver
         new_samples = [permuted_data[lengths[k]:lengths[k + 1]] for k, _ in enumerate(lengths[:-1])]
         return _cucconi_multisample_test_statistic(samples=new_samples, ties=ties)
 
-    return sorted(map(permuted_test, range(replications)))
+    return sorted(Parallel(n_jobs=n_jobs, verbose=verbose)(delayed(permuted_test)(i) for i in range(replications)))
 
 
-def cucconi_multisample_test(samples, method='bootstrap', replications=1000, ties='average'):
+def cucconi_multisample_test(samples, method='bootstrap', replications=1000, ties='average', n_jobs=1, verbose=0):
     """
     Method to perform a multisample Cucconi scale-location test.
     Args:
@@ -153,6 +162,11 @@ def cucconi_multisample_test(samples, method='bootstrap', replications=1000, tie
         replications (int): number of bootstrap replications
         ties (str): string specifying a method to deal with ties in data,
             possible values as for scipy.stats.rankdata
+        n_jobs (int): the maximum number of concurrently running jobs. If -1 all CPUs are used. If 1 is given,
+            no parallel computing code is used at all. For n_jobs below -1, (n_cpus + 1 + n_jobs) are used.
+            None is a marker for ‘unset’ that will be interpreted as n_jobs=1 (sequential execution)
+        verbose (int): the verbosity level: if non zero, progress messages are printed.
+            Above 50, the output is sent to stdout.
 
     Returns:
         tuple: namedtuple with test statistic value and the p-value
@@ -180,9 +194,11 @@ def cucconi_multisample_test(samples, method='bootstrap', replications=1000, tie
     test_statistics = _cucconi_multisample_test_statistic(samples=samples, ties=ties)
 
     if method == 'permutation':
-        h0_distribution = _cucconi_multisample_dist_bootstrap(samples=samples, replications=replications, ties=ties)
+        h0_distribution = _cucconi_multisample_dist_bootstrap(samples=samples, replications=replications, ties=ties,
+                                                              n_jobs=n_jobs, verbose=verbose)
     elif method == 'bootstrap':
-        h0_distribution = _cucconi_multisample_dist_permutation(samples=samples, replications=replications, ties=ties)
+        h0_distribution = _cucconi_multisample_dist_permutation(samples=samples, replications=replications, ties=ties,
+                                                                n_jobs=n_jobs, verbose=verbose)
     else:
         raise ValueError(
             "Unknown method for constructing the distribution, "
