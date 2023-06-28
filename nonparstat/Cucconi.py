@@ -28,7 +28,7 @@ def _cucconi_test_statistic(a: npt.NDArray, b: npt.NDArray, ties: str = 'average
 
 
 def _cucconi_dist_permutation(a: npt.NDArray, b: npt.NDArray, replications: int = 1000,
-                              ties: str = 'average', n_jobs: int = 1) -> list[float]:
+                              ties: str = 'average', n_jobs: int = 1) -> npt.NDArray:
     n1 = len(a)
     h0_data = np.concatenate([a, b])
 
@@ -38,12 +38,12 @@ def _cucconi_dist_permutation(a: npt.NDArray, b: npt.NDArray, replications: int 
         new_b = permuted_data[n1:]
         return _cucconi_test_statistic(a=new_a, b=new_b, ties=ties)
 
-    return sorted(
+    return np.sort(
         Parallel(n_jobs=n_jobs)(delayed(permuted_test)() for _ in range(replications)))
 
 
 def _cucconi_dist_bootstrap(a: npt.NDArray, b: npt.NDArray, replications: int = 1000,
-                            ties: str = 'average', n_jobs: int = 1) -> list[float]:
+                            ties: str = 'average', n_jobs: int = 1) -> npt.NDArray:
     n1 = len(a)
     n2 = len(b)
     h0_data = np.concatenate([a, b])
@@ -53,7 +53,7 @@ def _cucconi_dist_bootstrap(a: npt.NDArray, b: npt.NDArray, replications: int = 
         new_b = np.random.choice(h0_data, size=n2, replace=True)
         return _cucconi_test_statistic(new_a, new_b, ties=ties)
 
-    return sorted(
+    return np.sort(
         Parallel(n_jobs=n_jobs)(delayed(bootstrap_test)() for _ in range(replications)))
 
 
@@ -113,7 +113,7 @@ def cucconi_test(a: npt.NDArray, b: npt.NDArray, method: str = 'bootstrap', repl
     return CucconiResult(statistic=test_statistics, pvalue=p_value)
 
 
-def _cucconi_multisample_test_statistic(samples: npt.NDArray, ties: str = 'average') -> float:
+def _cucconi_multisample_test_statistic(samples: list[npt.NDArray], ties: str = 'average') -> float:
     lengths = np.cumsum([0] + [s.shape[0] for s in samples])
     ranked_data = rankdata(np.concatenate(samples), method=ties)
     samples_ranks = [ranked_data[lengths[k]:lengths[k + 1]] for k, _ in enumerate(lengths[:-1])]
@@ -136,8 +136,8 @@ def _cucconi_multisample_test_statistic(samples: npt.NDArray, ties: str = 'avera
     return MC
 
 
-def _cucconi_multisample_dist_bootstrap(samples: npt.NDArray, replications: int = 1000,
-                                        ties: str = 'average', n_jobs: int = 1) -> list[float]:
+def _cucconi_multisample_dist_bootstrap(samples: list[npt.NDArray], replications: int = 1000,
+                                        ties: str = 'average', n_jobs: int = 1) -> npt.NDArray:
     lengths = [len(s) for s in samples]
     h0_data = np.concatenate(samples)
 
@@ -145,12 +145,12 @@ def _cucconi_multisample_dist_bootstrap(samples: npt.NDArray, replications: int 
         new_samples = [np.random.choice(h0_data, size=n, replace=True) for n in lengths]
         return _cucconi_multisample_test_statistic(samples=new_samples, ties=ties)
 
-    return sorted(
+    return np.sort(
         Parallel(n_jobs=n_jobs)(delayed(bootstrap_test)() for _ in range(replications)))
 
 
-def _cucconi_multisample_dist_permutation(samples: npt.NDArray, replications: int = 1000,
-                                          ties: str = 'average', n_jobs: int = 1) -> list[float]:
+def _cucconi_multisample_dist_permutation(samples: list[npt.NDArray], replications: int = 1000,
+                                          ties: str = 'average', n_jobs: int = 1) -> npt.NDArray:
     lengths = lengths = np.cumsum([0] + [s.shape[0] for s in samples])
     h0_data = np.concatenate(samples)
 
@@ -159,11 +159,12 @@ def _cucconi_multisample_dist_permutation(samples: npt.NDArray, replications: in
         new_samples = [permuted_data[lengths[k]:lengths[k + 1]] for k, _ in enumerate(lengths[:-1])]
         return _cucconi_multisample_test_statistic(samples=new_samples, ties=ties)
 
-    return sorted(
+    return np.sort(
         Parallel(n_jobs=n_jobs)(delayed(permuted_test)() for _ in range(replications)))
 
 
-def cucconi_multisample_test(samples: npt.NDArray, method: str = 'bootstrap', replications: int = 1000,
+def cucconi_multisample_test(samples: list[npt.NDArray], method: str = 'bootstrap',
+                             replications: int = 1000,
                              ties: str = 'average', n_jobs: int = 1) -> CucconiMultisampleResult:
     """
     Method to perform a multisample Cucconi scale-location test.
